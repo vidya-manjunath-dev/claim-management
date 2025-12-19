@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -17,4 +18,6 @@ public class PolicyDto {
     private LocalDate startDate;
     private LocalDate endDate;
     private PolicyStatus status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

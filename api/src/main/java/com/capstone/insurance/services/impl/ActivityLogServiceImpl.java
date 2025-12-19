@@ -67,6 +67,7 @@ public class ActivityLogServiceImpl implements ActivityLogService {
                 .actionType(log.getActionType())
                 .details(log.getDetails())
                 .createdAt(log.getCreatedAt())
+                .updatedAt(log.getUpdatedAt())
                 .build();
     }
 }

@@ -14,5 +14,6 @@ public class ActivityLogDto {
     private String actionType;
     private String details;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
 

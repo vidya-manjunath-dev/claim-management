@@ -23,4 +23,5 @@ public class ClaimDto {
     private String remarks;
     private String evidenceUrl;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

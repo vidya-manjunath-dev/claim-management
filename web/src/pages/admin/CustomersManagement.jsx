@@ -9,7 +9,6 @@ import Button from '../../components/common/Button';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Alert from '../../components/common/Alert';
 import SearchInput from '../../components/common/SearchInput';
-import AdvancedFilter from '../../components/common/AdvancedFilter';
 import { toast } from 'react-toastify';
 
 const CustomersManagement = () => {
@@ -23,7 +22,6 @@ const CustomersManagement = () => {
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState({});
   const hasFetchedRef = useRef(false);
 
   useEffect(() => {
@@ -43,14 +41,31 @@ const CustomersManagement = () => {
 
   useEffect(() => {
     filterCustomers();
-  }, [customers, searchQuery, filters]);
+  }, [customers, searchQuery]);
 
   const fetchCustomers = async () => {
     try {
       setLoading(true);
       const data = await getAllCustomers();
-      setCustomers(data);
-      setFilteredCustomers(data);
+      // Sort by newest first (by createdAt descending)
+      const sortedData = [...data].sort((a, b) => {
+        // Primary sort: by createdAt (newest first)
+        if (a.createdAt && b.createdAt) {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+        // If one has createdAt and other doesn't, prioritize the one with createdAt
+        if (a.createdAt && !b.createdAt) return -1;
+        if (!a.createdAt && b.createdAt) return 1;
+        // Fallback: sort by customerCode if createdAt not available
+        const getCustomerCodeNumber = (code) => {
+          if (!code) return 0;
+          const match = code.toString().match(/\d+$/);
+          return match ? parseInt(match[0], 10) : 0;
+        };
+        return getCustomerCodeNumber(b.customerCode) - getCustomerCodeNumber(a.customerCode);
+      });
+      setCustomers(sortedData);
+      setFilteredCustomers(sortedData);
       setError('');
     } catch (err) {
       setError('Failed to load customers. Please try again.');
@@ -73,14 +88,6 @@ const CustomersManagement = () => {
         customer.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.address?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-    }
-
-    // Advanced filters
-    if (filters.status) {
-      filtered = filtered.filter(customer => {
-        const customerStatus = customer.status?.toLowerCase() || 'active';
-        return customerStatus === filters.status.toLowerCase();
-      });
     }
 
     setFilteredCustomers(filtered);
@@ -134,14 +141,6 @@ const CustomersManagement = () => {
     }
   };
 
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-  };
-
-  const handleFilterReset = () => {
-    setFilters({});
-  };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -149,18 +148,6 @@ const CustomersManagement = () => {
       </div>
     );
   }
-
-  const filterOptions = [
-    {
-      key: 'status',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { value: 'active', label: 'Active' },
-        { value: 'inactive', label: 'Inactive' }
-      ]
-    }
-  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -176,17 +163,12 @@ const CustomersManagement = () => {
         </Button>
       </div>
 
-      {/* Search and Filter */}
+      {/* Search */}
       <div className="flex items-center gap-3">
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search customers by name, email, or phone..."
-        />
-        <AdvancedFilter
-          filters={filterOptions}
-          onFilterChange={handleFilterChange}
-          onReset={handleFilterReset}
         />
       </div>
 

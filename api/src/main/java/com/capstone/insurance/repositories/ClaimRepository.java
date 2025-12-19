@@ -2,6 +2,7 @@ package com.capstone.insurance.repositories;
 
 import com.capstone.insurance.entities.Claim;
 import com.capstone.insurance.entities.enums.ClaimStatus;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -20,4 +21,7 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
             LocalDateTime to);
 
     List<Claim> findByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
+    
+    // Find all claims sorted by createdAt descending (newest first)
+    List<Claim> findAll(Sort sort);
 }

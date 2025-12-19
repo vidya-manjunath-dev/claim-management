@@ -11,10 +11,12 @@ import com.capstone.insurance.repositories.*;
 import com.capstone.insurance.services.ActivityLogService;
 import com.capstone.insurance.services.ClaimService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,6 +42,7 @@ public class ClaimServiceImpl implements ClaimService {
             throw new BadRequestException("Policy is not assigned to this customer");
         }
 
+        LocalDateTime now = LocalDateTime.now();
         Claim claim = Claim.builder()
                 .customer(customer)
                 .policy(policy)
@@ -48,6 +51,8 @@ public class ClaimServiceImpl implements ClaimService {
                 .description(request.getDescription())
                 .evidenceUrl(request.getEvidenceUrl())
                 .status(ClaimStatus.SUBMITTED)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
         claimRepository.save(claim);
 
@@ -72,6 +77,7 @@ public class ClaimServiceImpl implements ClaimService {
 
         return claimRepository.findByCustomerId(customer.getId())
                 .stream()
+                .sorted(Comparator.comparing(Claim::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(this::toDto)
                 .collect(Collectors.toList());
     }
@@ -99,8 +105,13 @@ public class ClaimServiceImpl implements ClaimService {
             if (fromDt != null && toDt != null) {
                 claims = claimRepository.findByCreatedAtBetween(fromDt, toDt);
             } else {
-                claims = claimRepository.findAll();
+                claims = claimRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
             }
+        }
+
+        // Sort by createdAt descending (newest first) if not already sorted
+        if (fromDt != null || status != null) {
+            claims.sort(Comparator.comparing(Claim::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())));
         }
 
         return claims.stream().map(this::toDto).collect(Collectors.toList());
@@ -159,6 +170,7 @@ public class ClaimServiceImpl implements ClaimService {
                 .remarks(c.getRemarks())
                 .evidenceUrl(c.getEvidenceUrl())
                 .createdAt(c.getCreatedAt())
+                .updatedAt(c.getUpdatedAt())
                 .build();
     }
     

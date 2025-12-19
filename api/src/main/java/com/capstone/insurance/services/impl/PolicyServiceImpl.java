@@ -15,9 +15,11 @@ import com.capstone.insurance.repositories.CustomerRepository;
 import com.capstone.insurance.repositories.PolicyRepository;
 import com.capstone.insurance.services.PolicyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,12 +37,15 @@ public class PolicyServiceImpl implements PolicyService {
         // Auto-generate policy code
         String policyCode = generatePolicyCode();
 
+        LocalDateTime now = LocalDateTime.now();
         Policy policy = Policy.builder()
                 .policyCode(policyCode)
                 .policyType(request.getPolicyType())
                 .coverageAmount(request.getCoverageAmount())
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
         policyRepository.save(policy);
 
@@ -69,7 +74,7 @@ public class PolicyServiceImpl implements PolicyService {
 
     @Override
     public List<PolicyDto> getAllPolicies() {
-        return policyRepository.findAll()
+        return policyRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -112,10 +117,13 @@ public class PolicyServiceImpl implements PolicyService {
         // Generate random policy number (mix of numbers and characters)
         String policyNumber = generateRandomPolicyNumber();
 
+        LocalDateTime now = LocalDateTime.now();
         CustomerPolicy cp = CustomerPolicy.builder()
                 .customer(customer)
                 .policy(policy)
                 .policyNumber(policyNumber)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
         customerPolicyRepository.save(cp);
     }
@@ -139,6 +147,14 @@ public class PolicyServiceImpl implements PolicyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found for user id " + userId));
 
         List<CustomerPolicy> customerPolicies = customerPolicyRepository.findByCustomerId(customer.getId());
+        
+        // Sort by createdAt descending (newest first)
+        customerPolicies.sort((a, b) -> {
+            if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+            if (a.getCreatedAt() == null) return 1;
+            if (b.getCreatedAt() == null) return -1;
+            return b.getCreatedAt().compareTo(a.getCreatedAt());
+        });
 
         return customerPolicies.stream()
                 .map(cp -> {
@@ -152,6 +168,8 @@ public class PolicyServiceImpl implements PolicyService {
                             .startDate(policy.getStartDate())
                             .endDate(policy.getEndDate())
                             .status(policy.getStatus())
+                            .createdAt(cp.getCreatedAt())
+                            .updatedAt(cp.getUpdatedAt())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -166,6 +184,8 @@ public class PolicyServiceImpl implements PolicyService {
                 .startDate(p.getStartDate())
                 .endDate(p.getEndDate())
                 .status(p.getStatus())
+                .createdAt(p.getCreatedAt())
+                .updatedAt(p.getUpdatedAt())
                 .build();
     }
 }

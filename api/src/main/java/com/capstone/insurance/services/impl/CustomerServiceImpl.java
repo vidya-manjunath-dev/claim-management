@@ -16,6 +16,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Sort;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -56,16 +59,19 @@ public class CustomerServiceImpl implements CustomerService {
             throw new BadRequestException("Unable to generate unique username. Please try again.");
         }
 
-        // Create user with auto-generated password
+        // Create user with auto-generated password and timestamps
+        LocalDateTime now = LocalDateTime.now();
         User user = User.builder()
                 .username(username)
                 .password(passwordEncoder.encode(DEFAULT_PASSWORD))
                 .role(Role.CUSTOMER)
                 .enabled(true)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
         userRepository.save(user);
 
-        // Create customer with auto-generated UUID
+        // Create customer with auto-generated UUID and timestamps (reuse same timestamp)
         Customer customer = Customer.builder()
                 .id(UUID.randomUUID())
                 .customerCode(customerCode)
@@ -74,6 +80,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .phone(request.getPhone())
                 .address(request.getAddress())
                 .user(user)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
         customerRepository.save(customer);
 
@@ -116,7 +124,7 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     public List<CustomerDto> getAllCustomers() {
-        return customerRepository.findAll()
+        return customerRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
@@ -163,6 +171,8 @@ public class CustomerServiceImpl implements CustomerService {
                 .phone(c.getPhone())
                 .address(c.getAddress())
                 .username(c.getUser().getUsername())
+                .createdAt(c.getCreatedAt())
+                .updatedAt(c.getUpdatedAt())
                 .build();
     }
 }

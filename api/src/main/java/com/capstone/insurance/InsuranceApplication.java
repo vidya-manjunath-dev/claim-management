@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @SpringBootApplication
@@ -25,6 +26,8 @@ public class InsuranceApplication {
                                 CustomerRepository customerRepository,
                                 PasswordEncoder passwordEncoder) {
         return args -> {
+            LocalDateTime now = LocalDateTime.now();
+            
             // Create admin user
             if (!userRepository.existsByUsername("admin@exe.in")) {
                 User admin = User.builder()
@@ -32,6 +35,8 @@ public class InsuranceApplication {
                         .password(passwordEncoder.encode("Admin@123"))
                         .role(Role.ADMIN)
                         .enabled(true)
+                        .createdAt(now)
+                        .updatedAt(now)
                         .build();
                 userRepository.save(admin);
                 System.out.println("Admin user created: admin@exe.in");
@@ -44,6 +49,8 @@ public class InsuranceApplication {
                         .password(passwordEncoder.encode("Admin@123"))
                         .role(Role.CUSTOMER)
                         .enabled(true)
+                        .createdAt(now)
+                        .updatedAt(now)
                         .build();
                 userRepository.save(customerUser);
 
@@ -56,6 +63,8 @@ public class InsuranceApplication {
                         .phone("1234567890")
                         .address("Customer Address")
                         .user(customerUser)
+                        .createdAt(now)
+                        .updatedAt(now)
                         .build();
                 customerRepository.save(customer);
                 System.out.println("Customer user created: customer@exe.in");

@@ -59,8 +59,25 @@ const PoliciesManagement = () => {
         getAllPolicies().catch(() => []),
         getAllCustomers().catch(() => [])
       ]);
-      setPolicies(policiesData);
-      setFilteredPolicies(policiesData);
+      // Sort policies by newest first (by createdAt descending)
+      const sortedPolicies = [...policiesData].sort((a, b) => {
+        // Primary sort: by createdAt (newest first)
+        if (a.createdAt && b.createdAt) {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        }
+        // If one has createdAt and other doesn't, prioritize the one with createdAt
+        if (a.createdAt && !b.createdAt) return -1;
+        if (!a.createdAt && b.createdAt) return 1;
+        // Fallback: sort by policyCode if createdAt not available
+        const getPolicyCodeNumber = (code) => {
+          if (!code) return 0;
+          const match = code.toString().match(/\d+$/);
+          return match ? parseInt(match[0], 10) : 0;
+        };
+        return getPolicyCodeNumber(b.policyCode) - getPolicyCodeNumber(a.policyCode);
+      });
+      setPolicies(sortedPolicies);
+      setFilteredPolicies(sortedPolicies);
       setCustomers(customersData);
     } catch (err) {
       setError('Failed to load data. Please try again.');
@@ -164,13 +181,19 @@ const PoliciesManagement = () => {
       if (editingPolicy) {
         await updatePolicy(editingPolicy.id, formData);
         toast.success('Policy updated successfully');
+        setShowModal(false);
+        setEditingPolicy(null);
+        fetchData();
       } else {
-        await createPolicy(formData);
+        // Create new policy
+        const newPolicy = await createPolicy(formData);
         toast.success('Policy created successfully');
+        setShowModal(false);
+        setEditingPolicy(null);
+        
+        // Refresh to get the latest from server (which will be sorted correctly)
+        await fetchData();
       }
-      setShowModal(false);
-      setEditingPolicy(null);
-      fetchData();
     } catch (err) {
       toast.error(err.message || 'Failed to save policy');
       console.error(err);

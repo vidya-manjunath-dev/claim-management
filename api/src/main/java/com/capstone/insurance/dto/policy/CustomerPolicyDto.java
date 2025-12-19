@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
@@ -19,5 +20,7 @@ public class CustomerPolicyDto {
     private LocalDate startDate;
     private LocalDate endDate;
     private PolicyStatus status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
 
